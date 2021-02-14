@@ -40,21 +40,27 @@ export class ParkingService {
     const parkings = cars.map((car) => this.assignParking(car, sortedEmployees[0]));
     const sortedParkings = [...parkings].sort((a, b) => a.price - b.price);
 
-    const reassignCount = Math.floor(sortedParkings.length / sortedEmployees.length);
-    if (reassignCount) {
-      let assignedCount = 0;
-      // assign workload equally
-      for (let pIndex = 0; pIndex < sortedParkings.length; pIndex++) {
-        for (let eIndex = 1; eIndex < sortedEmployees.length; eIndex++) {
-          sortedParkings[pIndex].employee = sortedEmployees[eIndex];
-          assignedCount++;
-          if (reassignCount === assignedCount) {
-            break;
-          }
-        }
-        if (reassignCount === assignedCount) {
-          break;
-        }
+    const employeesCount = sortedEmployees.length;
+    const perEmployee = Math.floor(sortedParkings.length / employeesCount);
+    const reassignCount = sortedParkings.length - perEmployee * employeesCount;
+    //console.log(reassignCount, perEmployee, sortedParkings.length, sortedEmployees.length);
+
+    let assignedCount = 0;
+    // assign workload equally
+    let pIndex = 0;
+    for (var eIndex = employeesCount - 1; eIndex > 0; eIndex--) {
+      let assignedToEmployee = 0;
+      while (perEmployee !== assignedToEmployee) {
+        sortedParkings[pIndex].employee = sortedEmployees[eIndex];
+        assignedCount++;
+        assignedToEmployee++;
+        pIndex++;
+      }
+      //console.log(reassignCount, eIndex);
+      if (reassignCount && reassignCount > eIndex) {
+        sortedParkings[pIndex].employee = sortedEmployees[eIndex];
+        assignedCount++;
+        pIndex++;
       }
     }
 

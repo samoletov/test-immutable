@@ -24,21 +24,30 @@ const getRandomPayload = () => {
   return data;
 };
 
-const checkWorkload = (employees: Employee[], workload: Parking[]) => {
+const checkWorkload = (employees: Employee[], workload: Parking[], checkPaid = false) => {
   const check = [];
-  employees.forEach((employee) => {
-    check[employee.name] = {
-      paid: 0,
-      count: 0,
-    };
-  });
+  [...employees]
+    .sort((a, b) => a.commission - b.commission)
+    .forEach((employee) => {
+      check[employee.name] = {
+        commission: employee.commission,
+        paid: 0,
+        count: 0,
+      };
+    });
   workload.forEach((parking) => {
     check[parking.employee.name].paid += parking.price * parking.employee.commission;
     check[parking.employee.name].count++;
   });
   console.log('check', check);
-  expect(check['A'].count).toBeGreaterThanOrEqual(check['B'].count);
-  expect(check['B'].paid).toBeLessThanOrEqual(check['A'].paid);
+  // check fair distribution
+  for (let i = 0; i < check.length - 1; i++) {
+    expect(check[i].count).toBeGreaterThanOrEqual(check[i + 1].count);
+  }
+  // risky: failures should be checked manually
+  if (checkPaid) {
+    expect(check['B'].paid).toBeLessThanOrEqual(check['A'].paid);
+  }
 };
 
 describe('ParkingService', () => {
@@ -57,16 +66,23 @@ describe('ParkingService', () => {
       const service = new ParkingService();
       const workload = service.calculateWorkload(testData.map((car) => new Car(car)));
       console.log('workload', workload);
-      checkWorkload(service.employees, workload);
+      checkWorkload(service.employees, workload, true);
     });
 
-    // risky: failures should be checked manually
-    it.skip('should calculate workload equal and profitable', () => {
+    it('should calculate workload equal and profitable using random data', () => {
       const service = new ParkingService();
       const payloads = [];
       // at leats one payload
       for (let i = 0; i < randomInt(10) + 100; i++) {
         payloads.push(getRandomPayload());
+      }
+      for (let i = 0; i < randomInt(10); i++) {
+        service.employees.push(
+          new Employee({
+            name: `T${i}`,
+            commission: randomInt(100) / 100,
+          }),
+        );
       }
       payloads.forEach((data) => {
         console.log('data', data);
